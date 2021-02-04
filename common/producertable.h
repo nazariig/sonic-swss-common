@@ -22,6 +22,7 @@ public:
     ProducerTable(DBConnector *db, const std::string &tableName, const std::string &dumpFile);
     virtual ~ProducerTable();
 
+    void setQueueName(const std::string &queue);
     void setBuffered(bool buffered);
 
     /* Implements set() and del() commands using notification messages */

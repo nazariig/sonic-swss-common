@@ -28,6 +28,7 @@ typedef std::tuple<std::string, std::string, std::vector<FieldValueTuple> > KeyO
 #define kfvKey    std::get<0>
 #define kfvOp     std::get<1>
 #define kfvFieldsValues std::get<2>
+#define WILDCARD "*"
 
 typedef std::map<std::string,std::string> TableMap;
 typedef std::map<std::string,TableMap> TableDump;
@@ -37,8 +38,11 @@ public:
 #ifndef SWIG
     __attribute__((deprecated))
 #endif
-    TableBase(int dbId, const std::string &tableName)
-        : m_tableName(tableName)
+    TableBase(int dbId,
+              const std::string &tableName,
+              const std::string &queueName = EMPTY_PREFIX)
+        : m_tableName(tableName),
+          m_queueName(queueName)
     {
         /* Look up table separator for the provided DB */
         auto it = tableNameSeparatorMap.find(dbId);
@@ -54,8 +58,10 @@ public:
         }
     }
 
-    TableBase(const std::string &tableName, const std::string &tableSeparator)
-        : m_tableName(tableName), m_tableSeparator(tableSeparator)
+    TableBase(const std::string &tableName,
+              const std::string &tableSeparator,
+              const std::string &queueName = EMPTY_PREFIX)
+        : m_tableName(tableName), m_queueName(queueName), m_tableSeparator(tableSeparator)
     {
         static const std::string legalSeparators = ":|";
         if (legalSeparators.find(tableSeparator) == std::string::npos)
@@ -77,13 +83,34 @@ public:
         return m_tableSeparator;
     }
 
-    std::string getChannelName() { return m_tableName + "_CHANNEL"; }
+    void setChannelName(const std::string& name)
+    {
+        m_queueName = name;
+    }
+
+    std::string getChannelName() const
+    {
+        return m_tableName + m_queueName + ChannelSuffix;
+    }
+
+    std::string getChannelNamePattern() const
+    {
+        return m_tableName + WILDCARD + ChannelSuffix;
+    }
+
+    std::string parseNameFromChannel(const std::string& channel) const
+    {
+        return channel.substr(m_tableName.size(), channel.size() - ChannelSuffix.size() - m_tableName.size());
+    }
+
 private:
     static const std::string TABLE_NAME_SEPARATOR_COLON;
     static const std::string TABLE_NAME_SEPARATOR_VBAR;
+    static const std::string ChannelSuffix;
     static const TableNameSeparatorMap tableNameSeparatorMap;
 
     std::string m_tableName;
+    std::string m_queueName;
     std::string m_tableSeparator;
 };
 
@@ -206,14 +233,36 @@ protected:
 
 class TableName_KeyValueOpQueues {
 private:
-    std::string m_keyvalueop;
+    std::string m_tableName;
+    std::string m_queueName;
+    static const std::string KeyValueOpQueueSuffix;
 public:
-    TableName_KeyValueOpQueues(const std::string &tableName)
-        : m_keyvalueop(tableName + "_KEY_VALUE_OP_QUEUE")
+    TableName_KeyValueOpQueues(const std::string &tableName,
+                               const std::string &queueName = EMPTY_PREFIX)
+        : m_tableName(tableName),
+          m_queueName(queueName)
     {
     }
 
-    std::string getKeyValueOpQueueTableName() const { return m_keyvalueop; }
+    void setKeyValueOpQueueTableName(const std::string& name)
+    {
+        m_queueName = name;
+    }
+
+    std::string getKeyValueOpQueueTableName() const
+    {
+        return m_tableName + m_queueName + KeyValueOpQueueSuffix;
+    }
+
+    std::string getKeyValueOpQueuePattern() const
+    {
+        return m_tableName + WILDCARD + KeyValueOpQueueSuffix;
+    }
+
+    std::string parseKeyValueOpQueuePattern(const std::string& name) const
+    {
+        return name.substr(m_tableName.size(), name.size() - m_tableName.size() - KeyValueOpQueueSuffix.size());
+    }
 };
 
 class TableName_KeySet {

@@ -14,12 +14,21 @@ class ConsumerTable : public ConsumerTableBase, public TableName_KeyValueOpQueue
 {
 public:
     ConsumerTable(DBConnector *db, const std::string &tableName, int popBatchSize = DEFAULT_POP_BATCH_SIZE, int pri = 0);
+    ConsumerTable(DBConnector *db,
+                  const std::string &tableName,
+                  bool initializeWithExistingData,
+                  int popBatchSize = DEFAULT_POP_BATCH_SIZE,
+                  int pri = 0);
 
     /* Get multiple pop elements */
     void pops(std::deque<KeyOpFieldsValuesTuple> &vkco, const std::string &prefix = EMPTY_PREFIX);
 
+    void setQueueName(const std::string &queue);
     void setModifyRedis(bool modify);
 private:
+
+    void initializeWithExistingData();
+
     std::string m_shaPop;
 
     /**

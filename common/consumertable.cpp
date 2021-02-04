@@ -14,14 +14,30 @@ using namespace std;
 
 namespace swss {
 
-ConsumerTable::ConsumerTable(DBConnector *db, const string &tableName, int popBatchSize, int pri)
+ConsumerTable::ConsumerTable(DBConnector *db,
+                             const std::string &tableName,
+                             bool initWithData,
+                             int popBatchSize,
+                             int pri)
     : ConsumerTableBase(db, tableName, popBatchSize, pri)
     , TableName_KeyValueOpQueues(tableName)
     , m_modifyRedis(true)
 {
     std::string luaScript = loadLuaScript("consumer_table_pops.lua");
     m_shaPop = loadRedisScript(db, luaScript);
+    if (initWithData)
+    {
+        initializeWithExistingData();
+    }
+}
 
+ConsumerTable::ConsumerTable(DBConnector *db, const string &tableName, int popBatchSize, int pri)
+    : ConsumerTable(db, tableName, true, popBatchSize, pri)
+{
+}
+
+void ConsumerTable::initializeWithExistingData()
+{
     for (;;)
     {
         RedisReply watch(m_db, string("WATCH ") + getKeyValueOpQueueTableName(), REDIS_REPLY_STATUS);
@@ -33,11 +49,17 @@ ConsumerTable::ConsumerTable(DBConnector *db, const string &tableName, int popBa
         bool succ = exec();
         if (succ) break;
     }
-
     RedisReply r(dequeueReply());
     long long int len = r.getReply<long long int>();
     //Key, Value and OP are in one list, they are processed in one shot
     setQueueLength(len/3);
+}
+
+void ConsumerTable::setQueueName(const std::string &queue)
+{
+    setChannelName(queue);
+    setKeyValueOpQueueTableName(queue);
+    initializeWithExistingData();
 }
 
 void ConsumerTable::setModifyRedis(bool modify)

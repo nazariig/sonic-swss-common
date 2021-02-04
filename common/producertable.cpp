@@ -65,6 +65,12 @@ void ProducerTable::setBuffered(bool buffered)
     m_buffered = buffered;
 }
 
+void ProducerTable::setQueueName(const std::string &queue)
+{
+    setChannelName(queue);
+    setKeyValueOpQueueTableName(queue);
+}
+
 void ProducerTable::enqueueDbChange(const string &key, const string &value, const string &op, const string& /* prefix */)
 {
     RedisCommand command;

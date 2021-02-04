@@ -18,6 +18,9 @@ using json = nlohmann::json;
 const std::string TableBase::TABLE_NAME_SEPARATOR_COLON = ":";
 const std::string TableBase::TABLE_NAME_SEPARATOR_VBAR = "|";
 
+const std::string TableBase::ChannelSuffix = "_CHANNEL";
+const std::string TableName_KeyValueOpQueues::KeyValueOpQueueSuffix = "_KEY_VALUE_OP_QUEUE";
+
 // NOTE: this map is deprecated and will be removed in the future, and new DBs should instead be added to database_config.json
 // Currently it is not used in C++ projects, only used in pyext python, only for backward compatibility purpose
 const TableNameSeparatorMap TableBase::tableNameSeparatorMap = {
